@@ -335,6 +335,7 @@ declare namespace JSX {
         loop?: string;
         controls?: string;
         playsinline?: string;
+        preload?: string;
         width?: string;
         height?: string;
     }
