@@ -15,16 +15,16 @@ const ul = <ul>
     <li>{item}</li>
 </ul>;
 
-typeof ul; // string
+ul instanceof elements.RenderNode // true
 
 const button = <button onclick="handleClick">
     <i class={icon}></i>
 </button>;
 
-typeof button; // string
+button instanceof elements.RenderNode // true
 
-console.log(ul);
-console.log(button);
+console.log(ul.toString());
+console.log(button.toString());
 ```
 
 Prints: 
@@ -43,7 +43,7 @@ Prints:
 Install:
 
 ```bash
-npm install --save typed-html
+npm install --save safe-typed-html
 ```
 
 Configure your TypeScript compiler for JSX:
@@ -64,10 +64,10 @@ Now create a \*.ts**x** file. For example: `example.tsx` with the following cont
 
 ```typescript
 // example.tsx
-import * as elements from 'typed-html';
+import * as elements from 'safe-typed-html';
 
 const w = 'world';
-const helloWorld = <p>Hello <strong>{w}</strong></p>;
+const helloWorld = (<p>Hello <strong>{w}</strong></p>).toString();
 
 typeof helloWorld; // => Just a string of course
 ```
@@ -87,9 +87,9 @@ For use in the browser, either load typed-html as a module, or use a bundler lik
 
 ```ts
 // Direct ES import:
-import * as elements from './node_modules/typed-html/dist/elements.js';
+import * as elements from './node_modules/safe-typed-html/dist/elements.js';
 // OR, when using a bundler like rollup or webpack
-import * as elements from 'typed-html';
+import * as elements from 'safe-typed-html';
 ```
 
 ## Supported scenarios
@@ -140,7 +140,7 @@ function Button(attributes: Attributes | undefined, contents: string[]) {
 const Button: CustomElementHandler = (attributes, contents) => <div><button type="button" class="original-class" {...attributes}>{contents}</button></div>;
 }
     
-console.log(<Button style="color:#f00">Button Text</Button>);
+console.log((<Button style="color:#f00">Button Text</Button>).toString());
 ```
 
 Prints: 
@@ -153,17 +153,17 @@ Prints:
 
 ## Sanitization
 
-Security is *NOT* a feature. This library does *NOT* sanitize.
+Strings are sanitized to remove HTML elements.
 
 ```ts
-const script = '<script>alert("hacked!")</script>';
+const script = '<script>alert("nice try!")</script>';
 const body = <body>{script}</body>;
 ```
 
 Will result in:
 
 ```html
-<body><script>alert('hacked!');</script></body>
+<body>&lt;script&gt;alert('nice try!');&lt;/script&gt;</body>
 ```
 
 If you need sanitization, you can use something like [sanitize-html](https://www.npmjs.com/package/sanitize-html).
