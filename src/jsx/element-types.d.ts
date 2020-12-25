@@ -334,6 +334,7 @@ declare namespace JSX {
         autoplay?: string;
         loop?: string;
         controls?: string;
+        playsinline?: string;
         width?: string;
         height?: string;
     }
