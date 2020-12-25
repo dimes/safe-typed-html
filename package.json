@@ -46,7 +46,7 @@
     "chai": "^4.2.0",
     "conventional-changelog-cli": "^2.0.21",
     "html-differ": "^1.4.0",
-    "mocha": "^6.1.4",
+    "mocha": "^8.2.1",
     "rimraf": "^2.6.3",
     "source-map-support": "^0.5.12",
     "tslint": "^5.18.0"

@@ -4,8 +4,10 @@
 
 type AttributeValue = number | string | Date | boolean;
 
+export type ContentType = RenderNode | string;
+
 export interface CustomElementHandler {
-    (attributes: Attributes | undefined, contents: string[]): string;
+    (attributes: Attributes | undefined, contents: ContentType[]): RenderNode;
 }
 
 export interface Attributes {
@@ -74,15 +76,27 @@ const attributesToString = (attributes: Attributes | undefined): string => {
     }
 };
 
-const contentsToString = (contents: any[] | undefined) => {
-    if (contents) {
-        return contents
-            .map(elements => Array.isArray(elements) ? elements.join('\n') : elements)
-            .join('\n');
-    } else {
-        return '';
+const flattenContents = (contents: (ContentType | Array<ContentType>)[]): ContentType[] => {
+    const results: ContentType[] = [];
+
+    for (const content of contents) {
+        if (content instanceof RenderNode) {
+            results.push(content);
+        } else if (Array.isArray(content)) {
+            results.push(...flattenContents(content as Array<ContentType | Array<ContentType>>));
+        } else {
+            results.push(
+                ('' + content)
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;")
+            );
+        }
     }
-};
+
+    return results;
+}
 
 const isVoidElement = (tagName: string) => {
     return [
@@ -105,17 +119,43 @@ const isVoidElement = (tagName: string) => {
     ].indexOf(tagName) > -1;
 };
 
-export function createElement(name: string | CustomElementHandler,
+export class RenderNode implements JSX.IRenderNode {
+    constructor(
+        readonly tagName: string,
+        readonly attributes: Attributes | undefined,
+        readonly children: ContentType[],
+    ) { }
+
+    toString() {
+        if (isVoidElement(this.tagName) && !this.children.length) {
+            return `<${this.tagName}${attributesToString(this.attributes)}>`;
+        } else {
+            const contents: string = this.children.length > 0 ? this.children.map(child => {
+                if (typeof child === 'string') {
+                    return child;
+                } else {
+                    return child.toString();
+                }
+            }).join('\n') : '';
+            return `<${this.tagName}${attributesToString(this.attributes)}>${contents}</${this.tagName}>`;
+        }
+    }
+}
+
+export function createElement(
+    name: string | CustomElementHandler,
     attributes: Attributes | undefined,
-    ...contents: string[]) {
+    ...contents: (ContentType | Array<ContentType>)[]
+): RenderNode {
     if (typeof name === 'function') {
-        return name(attributes, contents);
+        return name(attributes, flattenContents(contents));
     } else {
         const tagName = toKebabCase(name);
-        if (isVoidElement(tagName) && !contents.length) {
-            return `<${tagName}${attributesToString(attributes)}>`;
-        } else {
-            return `<${tagName}${attributesToString(attributes)}>${contentsToString(contents)}</${tagName}>`;
-        }
+        const node = new RenderNode(
+            tagName,
+            attributes,
+            flattenContents(contents),
+        );
+        return node;
     }
 }

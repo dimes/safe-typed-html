@@ -6,10 +6,17 @@ const HtmlDiffer = require('html-differ').HtmlDiffer;
 
 const singleLine = (input: string) => input.replace(/\r\n/g, '').replace(/\n/g, '');
 
-const testEqual = (expected: string, actual: () => string, itImplementation: (expectation: string, callback?: (this: Mocha.ITestCallbackContext, done: MochaDone) => any) => Mocha.ITest = it) => {
+const testEqual = (
+    expected: string,
+    actual: () => JSX.IRenderNode,
+    itImplementation: (
+        expectation: string,
+        callback?: (this: Mocha.ITestCallbackContext, done: MochaDone) => any
+    ) => Mocha.ITest = it
+) => {
     itImplementation(`should parse "${singleLine(expected)}" correctly`, () => {
         const htmlDiffer = new HtmlDiffer();
-        const diff: string = logger.getDiffText(htmlDiffer.diffHtml(expected, actual()));
+        const diff: string = logger.getDiffText(htmlDiffer.diffHtml(expected, actual().toString()));
         expect(diff, diff).to.have.lengthOf(0);
     });
 };
@@ -33,6 +40,7 @@ describe('Self-closing html tags', () => {
     testEqual('<video autoplay></video>', () => <video autoplay=""></video>);
 });
 
+
 describe('Boolean attributes', () => {
     // https://www.w3.org/TR/html5/infrastructure.html#boolean-attributes
     testEqual('<input checked>', () => <input checked={true}></input>);
@@ -46,13 +54,19 @@ describe('Boolean attributes', () => {
 
 describe('Encoded attributes', () => {
     it('should encode " as &quot', () => {
-        expect(<div class={'\"'}></div>).to.eq('<div class="&quot;"></div>');
+        expect((<div class={'\"'}></div>).toString()).to.eq('<div class="&quot;"></div>');
     });
     it('should encode & as &amp', () => {
-        expect(<div class={'&'}></div>).to.eq('<div class="&amp;"></div>');
+        expect((<div class={'&'}></div>).toString()).to.eq('<div class="&amp;"></div>');
     });
     it('should encode \\u00A0 as &nbsp', () => {
-        expect(<div class={'\u00A0'}></div>).to.eq('<div class="&nbsp;"></div>');
+        expect((<div class={'\u00A0'}></div>).toString()).to.eq('<div class="&nbsp;"></div>');
+    });
+});
+
+describe('Escaped content', () => {
+    it('should remove html tags', () => {
+        testEqual('<div>&lt;script&gt;<div>&lt;script&gt;</div></div>', () => <div>{'<script>'}<div>{'<script>'}</div></div>)
     });
 });
 
@@ -82,13 +96,13 @@ describe('custom elements', () => {
 });
 
 describe('helper components', () => {
-    const Header: elements.CustomElementHandler = (attributes, contents) => <h1 {...attributes}>{contents}</h1>;
+    const Header: elements.CustomElementHandler = (attributes, contents) => new elements.RenderNode('h1', attributes, contents);
 
     function Button(attributes: elements.Attributes | undefined, contents: string[]) {
         return <button type='button' class='original-class' {...attributes}>{contents}</button>;
     }
 
     testEqual('<h1 class="title"><span>Header Text</span></h1>', () => <Header class='title'><span>Header Text</span></Header>);
-    testEqual('<button class="override" type="button"></button>', () => <Button class='override'/>);
+    testEqual('<button class="override" type="button"></button>', () => <Button class='override' />);
     testEqual('<button class="original-class" type="button">Button Text</button>', () => <Button>Button Text</Button>);
 });
