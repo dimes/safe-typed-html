@@ -4,7 +4,7 @@
 
 type AttributeValue = number | string | Date | boolean;
 
-export type ContentType = RenderNode | string;
+export type ContentType = JSX.IRenderNode | string;
 
 export interface CustomElementHandler {
     (attributes: Attributes | undefined, contents: ContentType[]): RenderNode;
@@ -80,7 +80,10 @@ const flattenContents = (contents: (ContentType | Array<ContentType>)[]): Conten
     const results: ContentType[] = [];
 
     for (const content of contents) {
-        if (content instanceof RenderNode) {
+        if (
+            content instanceof RenderNode ||
+            content instanceof TextNode
+        ) {
             results.push(content);
         } else if (Array.isArray(content)) {
             results.push(...flattenContents(content as Array<ContentType | Array<ContentType>>));
@@ -119,6 +122,15 @@ const isVoidElement = (tagName: string) => {
     ].indexOf(tagName) > -1;
 };
 
+// Node for unescaped text
+export class TextNode implements JSX.IRenderNode {
+    constructor(readonly contents: string) { }
+
+    toString(): string {
+        return this.contents;
+    }
+}
+
 export class RenderNode implements JSX.IRenderNode {
     constructor(
         readonly tagName: string,
@@ -145,8 +157,15 @@ export class RenderNode implements JSX.IRenderNode {
 export function createElement(
     name: string | CustomElementHandler,
     attributes: Attributes | undefined,
-    ...contents: (ContentType | Array<ContentType>)[]
-): RenderNode {
+    ...rawContents: (ContentType | Array<ContentType>)[]
+): JSX.IRenderNode {
+    let contents: (ContentType | Array<ContentType>)[] = rawContents;
+    if (attributes && attributes['dangerousInnerHtml']) {
+        // Overwrite the contents with the given html
+        contents = [new TextNode('' + attributes['dangerousInnerHtml'])];
+        delete attributes['dangerousInnerHtml'];
+    }
+
     if (typeof name === 'function') {
         return name(attributes, flattenContents(contents));
     } else {

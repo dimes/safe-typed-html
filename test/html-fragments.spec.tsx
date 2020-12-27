@@ -65,9 +65,11 @@ describe('Encoded attributes', () => {
 });
 
 describe('Escaped content', () => {
-    it('should remove html tags', () => {
-        testEqual('<div>&lt;script&gt;<div>&lt;script&gt;</div></div>', () => <div>{'<script>'}<div>{'<script>'}</div></div>)
-    });
+    testEqual('<div>&lt;script&gt;<div>&lt;script&gt;</div></div>', () => <div>{'<script>'}<div>{'<script>'}</div></div>)
+    testEqual(
+        '<div><div>Hello World</div></div>',
+        () => <div dangerousInnerHtml="<div>Hello World</div>"></div>
+    );
 });
 
 describe('Events', () => {
