@@ -148,7 +148,7 @@ export class RenderNode implements JSX.IRenderNode {
                 } else {
                     return child.toString();
                 }
-            }).join('\n') : '';
+            }).join('') : '';
             return `<${this.tagName}${attributesToString(this.attributes)}>${contents}</${this.tagName}>`;
         }
     }
