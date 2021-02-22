@@ -61,7 +61,7 @@ const attributeToString = (attributes: Attributes) => (name: string): string => 
                 return '';
             }
         default:
-            return makeAttribute(escapeAttrNodeValue(value.toString()));
+            return makeAttribute(escapeAttrNodeValue(value?.toString() ?? ''));
     }
 };
 
